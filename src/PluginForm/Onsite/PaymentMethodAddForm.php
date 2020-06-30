@@ -42,7 +42,12 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
     }
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = $this->entity;
-    $payment_method->setBillingProfile($form['billing_information']['#profile']);
+
+    /** @var \Drupal\commerce\Plugin\Commerce\InlineForm\EntityInlineFormInterface $inline_form */
+    $inline_form = $form["billing_information"]["#inline_form"];
+    /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
+    $billing_profile = $inline_form->getEntity();
+    $payment_method->setBillingProfile($billing_profile);
 
     // Get values from POST instead of form_state (the only change from parent).
     $values = $this->getPostValues($form['#parents']);
