@@ -19,7 +19,7 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Logger\RfcLogLevel;
+use Drupal\Core\TypedData\Exception\MissingDataException;
 use litle\sdk\LitleOnlineRequest;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -45,13 +45,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
 
   /**
-   * The point of access to the Vantiv API.
-   *
-   * @var \litle\sdk\LitleOnlineRequest
-   */
-  protected $api;
-
-  /**
    * The event dispatcher.
    *
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
@@ -64,7 +57,6 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
   public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager, TimeInterface $time, EventDispatcherInterface $event_dispatcher) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager, $time);
 
-    $this->api = new LitleOnlineRequest();
     $this->eventDispatcher = $event_dispatcher;
   }
 
@@ -278,8 +270,13 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
     $profile = $payment_method->getBillingProfile();
     /** @var \Drupal\user\Entity\User $user */
     $user = $profile->getOwner();
-    /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $billing_info */
-    $billing_info = $profile->get('address')->first();
+
+    try {
+      /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $billing_info */
+      $billing_info = $profile->get('address')->first();
+    } catch (MissingDataException $e) {
+      $this->messenger->addError('There was an error with the address.');
+    }
 
     $hash_in = Helper::getApiRequestParamsFromConfig($this->configuration);
     $request_data = [
@@ -307,7 +304,9 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
     try {
       $request_method = $capture ? 'saleRequest' : 'authorizationRequest';
       $request = NestedArray::mergeDeep($hash_in, $event->getRequest());
-      $response = $this->api->{$request_method}($request);
+      /** @var \litle\sdk\LitleOnlineRequest $api */
+      $api = new LitleOnlineRequest();
+      $response = $api->{$request_method}($request);
     }
     catch (\Exception $e) {
       throw new InvalidRequestException($e->getMessage());
@@ -364,7 +363,9 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
 
     try {
       $request = NestedArray::mergeDeep($hash_in, $event->getRequest());
-      $response = $this->api->captureRequest($request);
+      /** @var \litle\sdk\LitleOnlineRequest $api */
+      $api = new LitleOnlineRequest();
+      $response = $api->captureRequest($request);
     }
     catch (\Exception $e) {
       throw new InvalidRequestException($e->getMessage());
@@ -399,7 +400,9 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
 
     try {
       $request = NestedArray::mergeDeep($hash_in, $event->getRequest());
-      $response = $this->api->{$request_operation}($request);
+      /** @var \litle\sdk\LitleOnlineRequest $api */
+      $api = new LitleOnlineRequest();
+      $response = $api->{$request_operation}($request);
     }
     catch (\Exception $e) {
       throw new InvalidRequestException($e->getMessage());
@@ -435,7 +438,9 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
 
     try {
       $request = NestedArray::mergeDeep($hash_in, $event->getRequest());
-      $response = $this->api->creditRequest($request);
+      /** @var \litle\sdk\LitleOnlineRequest $api */
+      $api = new LitleOnlineRequest();
+      $response = $api->creditRequest($request);
     }
     catch (\Exception $e) {
       throw new InvalidRequestException($e->getMessage());
@@ -506,7 +511,7 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
    */
   private function registerToken(PaymentMethodInterface $payment_method) {
     $hash_in = Helper::getApiRequestParamsFromConfig($this->configuration);
-    /** @var ProfileInterface $billing_profile */
+    /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
     $billing_profile = $payment_method->getBillingProfile();
     $request_data = [
       'id' => $payment_method->getOriginalId(),
@@ -515,7 +520,9 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
     ];
 
     try {
-      $response = $this->api->registerTokenRequest($hash_in + $request_data);
+      /** @var \litle\sdk\LitleOnlineRequest $api */
+      $api = new LitleOnlineRequest();
+      $response = $api->registerTokenRequest($hash_in + $request_data);
     }
     catch (\Exception $e) {
       throw new InvalidRequestException($e->getMessage());
