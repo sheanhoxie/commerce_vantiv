@@ -97,7 +97,7 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
    * {@inheritdoc}
    */
   public function submitCreditCardForm(array $element, FormStateInterface $form_state) {
-    /** @var PaymentMethodInterface $payment_method */
+    /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = $this->entity;
     $values = $this->getPostValues($element['#parents']);
     $payment_method->card_type = VantivApiHelper::getCommerceCreditCardType($values['vantivResponseType']);
