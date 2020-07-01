@@ -113,11 +113,13 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
    */
   protected function buildCreditCardForm(array $element, FormStateInterface $form_state) {
 
-    /** @var OnSite $plugin */
+    // Get configuration for Vantiv hidden fields
+    /** @var \Drupal\commerce_vantiv\Plugin\Commerce\PaymentGateway\OnSite $plugin */
     $plugin = $this->plugin;
     $configuration = $plugin->getConfiguration();
-    // @todo Get order if it exists.
-    // $order = $form_state->getValue('order');
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\MultistepDefault $multi_step */
+    $multi_step = $form_state->getBuildInfo()['callback_object'];
+    $order = $multi_step->getOrder();
     $element = parent::buildCreditCardForm($element, $form_state);
 
     // Add css class so that we can easily identify Vantiv related input fields;
@@ -145,7 +147,7 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
     $element['vantivRequestOrderId'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'vantivRequestOrderId'],
-      '#value' => (!empty($order) && isset($order->order_id)) ? $order->order_id : 0,
+      '#value' => (!empty($order) && isset($order->order_id)) ? $order->order_id->value : 0,
     ];
     $element['vantivRequestReportGroup'] = [
       '#type' => 'hidden',
