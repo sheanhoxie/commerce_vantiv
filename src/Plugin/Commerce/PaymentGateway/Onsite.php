@@ -47,7 +47,7 @@ class OnSite extends OnsitePaymentGatewayBase implements OnsiteInterface {
   /**
    * The point of access to the Vantiv API.
    *
-   * @var litle\sdk\LitleOnlineRequest
+   * @var \litle\sdk\LitleOnlineRequest
    */
   protected $api;
 

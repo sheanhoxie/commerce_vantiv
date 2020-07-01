@@ -47,7 +47,7 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
     $payment_method->setBillingProfile($billing_profile);
 
     $values = $this->getPostValues($form['#parents']);
-    /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface $payment_gateway_plugin */
+    /** @var \Drupal\commerce_vantiv\Plugin\Commerce\PaymentGateway\OnSite $payment_gateway_plugin */
     $payment_gateway_plugin = $this->plugin;
     // The payment method form is customer facing. For security reasons
     // the returned errors need to be more generic.
