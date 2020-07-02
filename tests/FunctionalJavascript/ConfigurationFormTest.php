@@ -3,17 +3,14 @@
 namespace Drupal\Tests\commerce_vantiv\FunctionalJavascript;
 
 use Drupal\commerce_payment\Entity\PaymentGateway;
-use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
-use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
+use Drupal\Tests\commerce\FunctionalJavascript\CommerceWebDriverTestBase;
 
 /**
- * Tests the integration between payments and checkout.
+ * Tests the creation of the Vantiv Onsite gateway
  *
  * @group commerce
  */
-class ConfigurationFormTest extends CommerceBrowserTestBase {
-
-  use JavascriptTestTrait;
+class ConfigurationFormTest extends CommerceWebDriverTestBase {
 
   /**
    * The current user.
@@ -58,36 +55,46 @@ class ConfigurationFormTest extends CommerceBrowserTestBase {
    * Tests creating a Vantiv onsite payment gateway via the config UI.
    */
   public function testCreateGateway() {
+    // Navigate to the "payment gateways" list page
     $this->drupalGet('admin/commerce/config/payment-gateways');
+
+    // Click the button to add a new payment gateway
     $this->getSession()->getPage()->clickLink('Add payment gateway');
-    $this->assertSession()->addressEquals('admin/commerce/config/payment-gateways/add');
-    $radio_button = $this->getSession()->getPage()->findField('Vantiv (Onsite)');
-    $radio_button->click();
+
+    // Get the page so we can set form values
+    $page = $this->getSession()->getPage();
+
+    // Choose the Vantiv (onsite) radio option
+    $page->findField('Vantiv (Onsite)')->selectOption('vantiv_onsite');
     $this->waitForAjaxToFinish();
-    $values = [
-      'plugin' => 'vantiv_onsite',
-      'id' => 'vantiv_onsite_us',
-      'label' => 'Vantiv Onsite US',
-      'configuration[vantiv_onsite][mode]' => 'test',
-      'configuration[vantiv_onsite][user]' => 'UserName',
-      'configuration[vantiv_onsite][password]' => 'PassWord',
-      'configuration[vantiv_onsite][currency_merchant_map][default]' => '0137147',
-      'configuration[vantiv_onsite][proxy]' => 'prox://y',
-      'configuration[vantiv_onsite][paypage_id]' => 'PayPageID',
-      'configuration[vantiv_onsite][batch_requests_path]' => '/batch-requests-path',
-      'configuration[vantiv_onsite][litle_requests_path]' => '/litle-requests-path',
-      'configuration[vantiv_onsite][sftp_username]' => 'sFTP Username',
-      'configuration[vantiv_onsite][sftp_password]' => 'sFTP Password',
-      'configuration[vantiv_onsite][batch_url]' => 'batch://url',
-      'configuration[vantiv_onsite][tcp_port]' => '3000',
-      'configuration[vantiv_onsite][tcp_timeout]' => '20',
-      'configuration[vantiv_onsite][tcp_ssl]' => '1',
-      'configuration[vantiv_onsite][print_xml]' => '1',
-      'configuration[vantiv_onsite][timeout]' => '10',
-      'configuration[vantiv_onsite][report_group]' => 'eCommerce',
-      'status' => '1',
-    ];
-    $this->submitForm($values, 'Save');
+
+    // Choose the pre-live option
+    $page->findField('pre-live')->selectOption(0);
+
+    // Fill out the form
+    $page->findField('label')->setValue('Vantiv Onsite US');
+    $page->findField('id')->setValue('vantiv_onsite_us');
+    $page->findField('configuration[vantiv_onsite][user]')->setValue('UserName');
+    $page->findField('configuration[vantiv_onsite][password]')->setValue('PassWord');
+    $page->findField('configuration[vantiv_onsite][currency_merchant_map][default]')->setValue('0137147');
+    $page->findField('configuration[vantiv_onsite][proxy]')->setValue('prox://y');
+    $page->findField('configuration[vantiv_onsite][paypage_id]')->setValue('PayPageID');
+    $page->findField('configuration[vantiv_onsite][batch_requests_path]')->setValue('/batch-requests-path');
+    $page->findField('configuration[vantiv_onsite][litle_requests_path]')->setValue('/litle-requests-path');
+    $page->findField('configuration[vantiv_onsite][sftp_username]')->setValue('sFTP Username');
+    $page->findField('configuration[vantiv_onsite][sftp_password]')->setValue('sFTP Password');
+
+    $page->findField('configuration[vantiv_onsite][batch_url]')->setValue('batch://url');
+    $page->findField('configuration[vantiv_onsite][tcp_port]')->setValue('3000');
+    $page->findField('configuration[vantiv_onsite][tcp_timeout]')->setValue('20');
+    $page->findField('configuration[vantiv_onsite][tcp_ssl]')->check();
+    $page->findField('configuration[vantiv_onsite][print_xml]')->check();
+    $page->findField('configuration[vantiv_onsite][timeout]')->setValue('10');
+    $page->findField('configuration[vantiv_onsite][report_group]')->setValue('eCommerce');
+    $page->findField('status')->selectOption(1);
+
+    $this->submitForm([], t('Save'));
+    $this->assertSession()->waitForElementVisible('css', '.non-exist-element', 9999);
     $this->assertSession()->pageTextContains('Saved the Vantiv Onsite US payment gateway.');
 
     $payment_gateway = PaymentGateway::load('vantiv_onsite_us');
@@ -97,7 +104,7 @@ class ConfigurationFormTest extends CommerceBrowserTestBase {
     $this->assertEquals('Vantiv Onsite US', $payment_gateway->label());
     $this->assertEquals('vantiv_onsite', $payment_gateway->getPluginId());
     $this->assertEquals(TRUE, $payment_gateway->status());
-    $this->assertEquals('test', $payment_gateway_plugin->getMode());
+    $this->assertEquals('0', $payment_gateway_plugin->getMode());
     $this->assertEquals('UserName', $config['user']);
     $this->assertEquals('PassWord', $config['password']);
     $this->assertEquals('0137147', $config['currency_merchant_map']['default']);
