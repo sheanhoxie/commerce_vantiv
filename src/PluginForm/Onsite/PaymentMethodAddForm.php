@@ -117,9 +117,7 @@ class PaymentMethodAddForm extends BasePaymentMethodAddForm {
     /** @var \Drupal\commerce_vantiv\Plugin\Commerce\PaymentGateway\OnSite $plugin */
     $plugin = $this->plugin;
     $configuration = $plugin->getConfiguration();
-    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\MultistepDefault $multi_step */
-    $multi_step = $form_state->getBuildInfo()['callback_object'];
-    $order = $multi_step->getOrder();
+    $order = $this->routeMatch->getParameter('commerce_order');
     $element = parent::buildCreditCardForm($element, $form_state);
 
     // Add css class so that we can easily identify Vantiv related input fields;
